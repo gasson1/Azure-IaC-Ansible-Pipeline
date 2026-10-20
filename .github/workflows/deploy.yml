@@ -1,0 +1,32 @@
+name: "Terraform & Ansible CI/CD Pipeline"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform_validation:
+    name: "Weryfikacja kodu Terraform"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pobranie kodu z repozytorium
+        uses: actions/checkout@v3
+
+      - name: Konfiguracja narzędzia Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Inicjalizacja Terraforma
+        run: terraform init -backend=false
+
+      - name: Sprawdzenie formatowania kodu
+        run: terraform fmt -check
+
+      - name: Walidacja składniowa kodu
+        run: terraform validate
