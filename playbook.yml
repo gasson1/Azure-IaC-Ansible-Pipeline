@@ -1,0 +1,19 @@
+---
+- name: Konfiguracja Serwera Web
+  hosts: web
+  become: true
+  tasks:
+    - name: Aktualizacja listy pakietów apt
+      apt:
+        update_cache: yes
+
+    - name: Instalacja serwera WWW Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Uruchomienie usługi Nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
