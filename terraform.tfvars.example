@@ -1,0 +1,9 @@
+# Skopiuj ten plik jako "terraform.tfvars" i wpisz swoje wartości.
+# Plik terraform.tfvars jest w .gitignore, więc nie trafi na GitHuba.
+
+# Twój publiczny adres IP + "/32" (sprawdzisz go poleceniem: curl.exe ifconfig.me)
+allowed_ssh_cidr = "1.2.3.4/32"
+
+# Opcjonalnie (mają wartości domyślne):
+# location            = "westeurope"
+# ssh_public_key_path = "~/.ssh/id_rsa.pub"

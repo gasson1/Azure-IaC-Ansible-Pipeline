@@ -1,4 +1,16 @@
+# Lokalne pliki Terraforma (pobrane wtyczki)
 .terraform/
+
+# Stan infrastruktury - zawiera dane wrażliwe, NIGDY na GitHuba
 *.tfstate
-*.tfstate.backup
-.terraform.lock.hcl
+*.tfstate.*
+
+# Zmienne z prywatnymi wartościami (przykład w terraform.tfvars.example)
+*.tfvars
+!terraform.tfvars.example
+
+# Plany Terraforma
+*.tfplan
+
+# UWAGA: .terraform.lock.hcl celowo NIE jest ignorowany -
+# HashiCorp zaleca trzymać go w repozytorium (stałe wersje wtyczek).
