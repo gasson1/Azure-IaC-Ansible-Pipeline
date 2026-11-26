@@ -14,3 +14,6 @@
 
 # UWAGA: .terraform.lock.hcl celowo NIE jest ignorowany -
 # HashiCorp zaleca trzymać go w repozytorium (stałe wersje wtyczek).
+
+# Inwentarz Ansible jest generowany przez Terraform (ansible.tf)
+inventory.ini

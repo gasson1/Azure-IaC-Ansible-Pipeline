@@ -8,6 +8,12 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.117"
     }
+    # Provider "local" zapisuje pliki na dysku - używamy go do
+    # automatycznego wygenerowania inwentarza Ansible (ansible.tf).
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.5"
+    }
   }
 }
 

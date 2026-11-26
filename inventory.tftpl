@@ -1,0 +1,18 @@
+# Plik wygenerowany automatycznie przez Terraform (ansible.tf, inventory.tftpl).
+# Nie edytuj go ręcznie - po każdym "terraform apply" zostanie nadpisany.
+
+[web]
+vm-web ansible_host=${web_public_ip}
+
+[db]
+vm-db ansible_host=${db_private_ip}
+
+[all:vars]
+ansible_user=${admin_username}
+ansible_ssh_private_key_file=~/.ssh/id_rsa
+ansible_ssh_common_args='-o StrictHostKeyChecking=accept-new'
+
+[db:vars]
+# Baza danych nie ma publicznego adresu IP, więc Ansible łączy się z nią
+# przez serwer web, który pełni rolę jump hosta (ProxyJump).
+ansible_ssh_common_args='-o StrictHostKeyChecking=accept-new -o ProxyJump=${admin_username}@${web_public_ip}'

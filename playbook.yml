@@ -1,15 +1,21 @@
 ---
-- name: Konfiguracja Serwera Web
+# ==================================================================
+# Warstwa web: serwer WWW Nginx
+# ==================================================================
+- name: Konfiguracja serwera web
   hosts: web
   become: true
   tasks:
     - name: Aktualizacja listy pakietów apt
       apt:
         update_cache: yes
+        cache_valid_time: 3600
 
-    - name: Instalacja serwera WWW Nginx
+    - name: Instalacja Nginx oraz klienta PostgreSQL (do testów połączenia z bazą)
       apt:
-        name: nginx
+        name:
+          - nginx
+          - postgresql-client
         state: present
 
     - name: Uruchomienie usługi Nginx
@@ -17,3 +23,74 @@
         name: nginx
         state: started
         enabled: yes
+
+# ==================================================================
+# Warstwa bazy danych: PostgreSQL dostępny tylko z podsieci web
+# ==================================================================
+- name: Konfiguracja serwera bazy danych
+  hosts: db
+  become: true
+  vars:
+    pg_version: "14"                 # wersja PostgreSQL w Ubuntu 22.04
+    db_name: appdb
+    db_user: appuser
+    web_subnet: "10.0.1.0/24"        # tylko z tej podsieci wolno łączyć się z bazą
+    # Hasło NIE jest zapisane w kodzie - pobieramy je ze zmiennej środowiskowej
+    db_password: "{{ lookup('env', 'DB_PASSWORD') }}"
+
+  tasks:
+    - name: Sprawdzenie, czy podano hasło do bazy
+      assert:
+        that: db_password | length > 0
+        fail_msg: "Ustaw zmienną środowiskową DB_PASSWORD przed uruchomieniem playbooka."
+
+    - name: Aktualizacja listy pakietów apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Instalacja PostgreSQL i bibliotek potrzebnych Ansible
+      apt:
+        name:
+          - postgresql
+          - python3-psycopg2   # moduły community.postgresql korzystają z tej biblioteki
+          - acl                # potrzebne, gdy Ansible działa jako użytkownik postgres
+        state: present
+
+    - name: Nasłuchiwanie na interfejsach sieciowych (dostęp i tak ogranicza NSG oraz pg_hba)
+      lineinfile:
+        path: "/etc/postgresql/{{ pg_version }}/main/postgresql.conf"
+        regexp: "^#?listen_addresses"
+        line: "listen_addresses = '*'"
+      notify: Restart PostgreSQL
+
+    - name: Zezwolenie na logowanie do bazy tylko z podsieci web
+      lineinfile:
+        path: "/etc/postgresql/{{ pg_version }}/main/pg_hba.conf"
+        line: "host    {{ db_name }}    {{ db_user }}    {{ web_subnet }}    scram-sha-256"
+      notify: Restart PostgreSQL
+
+    - name: Uruchomienie usługi PostgreSQL
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Utworzenie użytkownika bazy danych
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+      no_log: true                     # hasło nie pojawi się w logach
+
+    - name: Utworzenie bazy danych aplikacji
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+
+  handlers:
+    - name: Restart PostgreSQL
+      service:
+        name: postgresql
+        state: restarted
